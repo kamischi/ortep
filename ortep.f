@@ -230,8 +230,7 @@ C     *******LEGEND ROTATION*******
       T1=THETA*.01745329252
       COSTH=COS(T1)
       SINTH=SIN(T1)
-      DO 312 J=1,9
-  312 SYMB(J,1)=0.
+      symb = 0.0
       SYMB(1,1)=COSTH
       SYMB(2,2)=COSTH
       SYMB(3,3)=1.
@@ -422,7 +421,7 @@ C     ***** SOLUTION OF MATRIX EQUATION AX=B FOR X *****
 C     ***** USES METHOD OF TRIANGULAR ELIMINATION *****
 C     ***** B AND X HAVE DIMENSIONS (3,JJJ),A IS ALWAYS (3,3)
 C     ***** TO INVERT A MAKE B 3 BY 3 IDENITY MATRIX *****
-      DIMENSION A1(3,3),A(3,3),B(3,3),B1(3,3),X(3,3)
+      DIMENSION A1(3,3),A(3,3),B(3,3),B1(3,jjj),X(3,jjj)
       NV=JJJ
 C     ***** TRANSFER DATA *****
       DO 2 I=1,3
@@ -516,6 +515,7 @@ C     ***** ITYPE=0 W(1)=A,W(2)=(AXB)XA,W(3)=(AXB), ABC=CELL VECTORS ***
       REAL*8 AIN,ATOMID 
       CHARACTER*4 TITLE,TITLE2
       CHARACTER*8 CHEM
+      character*72 blank
       COMMON NG,A(9),AA(3,3),AAREV(3,3),AAWRK(3,3),AID(3,3)
      1 ,AIN(140),ATOMID(500),ATOMS(3,500),BB(3,3),BRDR,CD(8,20)
      2 ,CONT(5),D(3,130),DA(3,3),DP(2,130),DISP,EDGE,FORE,FS(3,3,96)
@@ -529,12 +529,12 @@ C     ***** ITYPE=0 W(1)=A,W(2)=(AXB)XA,W(3)=(AXB), ABC=CELL VECTORS ***
      1 ,IDENT(2,505),MAXATM
 C     ***** OBTAIN POSITIONAL PARAMETERS *****
       DATA RESB/.2,.08/
+      data blank / ' ' /
       D100=100.
       D1000=1000.
       D100K=100000. 
       NG1=0
-      DO 105 J=1,26
-  105 W(J,1)=0.
+      w = 0.0
       WD(1)=Z1
       WD(2)=Z2
       DO 135 I=1,2
@@ -567,14 +567,17 @@ C     ***** OBTAIN POSITIONAL PARAMETERS *****
       IF(MOD(NJ2,10).EQ.1) GO TO 143
 c *** Line bonds with NO symbol on atom position (803,813)
       if (iabs(kd(5,nb)).ge.1) then
+c           call pgqci(ioldcolor)
+c           call pgsci(3)
          call draw(W(2,1),0.,0.,3)
          call draw(W(2,2),0.,0.,2)
+c           call pgsci(ioldcolor)
          go to 570
       end if
 C *** LINE BONDS AND CENTERED SYMBOLS (803,813) 
       HGT=SCL*.12
-      CALL SIMBOL(W(2,1),W(3,1),HGT,' ',0.,-1)
-      CALL SIMBOL(W(2,2),W(3,2),HGT,' ',0.,-2)
+      CALL SIMBOL(W(2,1),W(3,1),HGT,blank,0.,-1)
+      CALL SIMBOL(W(2,2),W(3,2),HGT,blank,0.,-2)
       GO TO 570
 C     ***** STICK BONDS FOR 801,802,811,812 *****
   143 KODE=KD(5,NB)
@@ -615,10 +618,10 @@ C     ***** SWITCH ATOMS *****
       WD(1)=WD(2)
       WD(2)=TD
 C     ***** FORM IDEMFACTOR MATRIX *****
-  175 DO 180 J=1,3
-      E(J,J)=1.
-      E(J+1,1)=0.
-  180 E(J+5,1)=0.
+  175 e = 0.0
+      do i = 1,3
+         e(i,i) = 1.0
+      enddo
 C     ***** FORM VECTOR SET RADIAL TO BOND *****
       CALL DIFV(W(4,2),W(4,1),DA(1,3))
       CALL UNITY(DA(1,3),V3,1)
@@ -783,6 +786,8 @@ C     ***** CALL GLOBAL OVERLAP ROUTINE *****
 c *** draw dashed stick bonds
       if (kdash.ne.0) then
 c        draw bond ends
+c           call pgqci(ioldcolor)
+c           call pgsci(4)
          call draw(dp(1,1),0.,0.,3)
          do 406 k=nres1,129,nresol
   406    call draw(dp(1,k),0.,0.,2)
@@ -817,18 +822,24 @@ c        draw dashed parts
                x1=r(1)
                y1=r(2)
   410    continue
+c           call pgsci(ioldcolor)
          go to 500
       end if      
 c *** draw non-dashed stick bonds
 C     ***** DRAW BOND OUTLINE *****
+c           call pgqci(ioldcolor)
+c           call pgsci(5)
       CALL DRAW(DP(1,1),0.,0.,3)
       DO 415 K=NRES1,129,NRESOL
   415 CALL DRAW(DP(1,K),0.,0.,2)
       DO 420 K=2,66,NRESOL
   420 CALL DRAW(DP(1,K),0.,0.,2)
       CALL DRAW(DP(1,65),0.,0.,2)
+c           call pgsci(ioldcolor)
 C     ***** DRAW BOND DETAIL *****
   425 K=65
+c           call pgqci(ioldcolor)
+c           call pgsci(6)
   430 K=K-NBND
       IF(K-1)500,500,435
   435 CALL DRAW(DP(1,K),0.,0.,3)
@@ -840,6 +851,7 @@ C     ***** DRAW BOND DETAIL *****
       GO TO 430
 
   500 HGT=CD(4,NB)
+c           call pgsci(ioldcolor)
       OFF=CD(5,NB)
       IF(HGT)570,570,510
 C     ***** PERSPECTIVE BOND LABEL ROUTINE *****
@@ -930,6 +942,9 @@ C     ***** CHECK BOUNDRY *****
 C     ***** CHECK FOR OVERLAP *****
       NCQ=0
       CALL LAPDRW(Y,NPEN,NCQ)
+      if (abs(dx-0.18)<0.005.and.abs(dy-5.9614528E-02)<1e-6) then
+         write (*,*) 'Draw 946: ', Y, NPEN, NCQ
+      endif
       IF(NCQ)165,165,170
 C     ***** CALL PLOTTING ROUTINE IF NO OVERLAPPING ELEMENTS ARE STORED
   165 CALL SCRIBE(Y,NPEN)
@@ -2030,6 +2045,9 @@ C     ***** PLOT DOTTED BOUNDARY ELLIPSE *****
   852 IF(NDOT-NRESOL)853,855,855
   853 CALL RADIAL(NSOLID-1)
   855 CALL PROJ(D,DP,X,XO,VIEW,1,129,NDOT)
+c           call pgqci(ioldcolor)
+c           call pgsci(7)
+
       DO 857 J=1,129,NDOT
       CALL DRAW(DP(1,J),DISP,DISP,3)
       DO 856 I=1,3,2
@@ -2040,12 +2058,16 @@ C     ***** PLOT DOTTED BOUNDARY ELLIPSE *****
       IF(DISP)857,857,856
   856 CONTINUE
   857 CONTINUE
+c           call pgsci(ioldcolor)
       GO TO 1100
 C     ***** PLOT SOLID BOUNDARY ELLIPSE *****
   859 CALL PROJ(D,DP,X,XO,VIEW,1,129,NRESOL)
+c           call pgqci(ioldcolor)
+c           call pgsci(8)
       CALL DRAW(DP,0.,0.,3)
       DO 860 J=NRES1,129,NRESOL
   860 CALL DRAW(DP(1,J),0.,0.,2)
+c           call pgsci(ioldcolor)
       IF(DISP)1100,1100,865
 C     ***** BOUNDARY ANNULUS AS A LINEAR FUNCTION OF HEIGHT *****
   865 CALL DIFV(XT,ORGN,V1)
@@ -2058,6 +2080,8 @@ C     ***** BOUNDARY ANNULUS AS A LINEAR FUNCTION OF HEIGHT *****
 C     ***** INCREASE ANNULAR THICKNESS *****
       DO 875 I=1,NCYCLE
       T4=T3*FLOAT(I)
+c           call pgqci(ioldcolor)
+c           call pgsci(9)
       DO 875 J=1,129,NRESOL
   875 CALL DRAW(DP(1,J),D(1,J)*T4,D(2,J)*T4,2)
       GO TO 1100
@@ -2115,6 +2139,7 @@ C     ***** DASHED LINE FOR REVERSE AXIS *****
       DO 985 K=1,2
       L=4-K
       CALL PROJ(V1,DP,X,XO,VIEW,1,1,1)
+      write (*,*) 'Line 2118: ', L
       CALL DRAW(DP,0.,0.,L)
       DO 985 I=1,3
   985 V1(I)=V1(I)+V2(I)
@@ -2152,6 +2177,7 @@ C     ***** SHADE QUADRANT BETWEEN TWO PRINCIPAL AXES *****
       CALL DRAW(DP(1,I-1),0.,0.,3)
  1030 CALL DRAW(DP(1,I),0.,0.,2)
  1100 CONTINUE
+c           call pgsci(ioldcolor)
  1105 CONTINUE
 C     ***** ELIMINATE LOCAL OVERLAP INFORMATION BEFORE RETURNING *****
       CALL LAP500(-1)
@@ -2370,6 +2396,7 @@ C     ***** PRINT OUT QUADRANGLE IDENTIFICATION ARRAY *****
       REAL*8 AIN,ATOMID 
       CHARACTER*4 TITLE,TITLE2
       CHARACTER*8 CHEM
+      character*72 blank
       COMMON NG,A(9),AA(3,3),AAREV(3,3),AAWRK(3,3),AID(3,3)
      1 ,AIN(140),ATOMID(500),ATOMS(3,500),BB(3,3),BRDR,CD(8,20)
      2 ,CONT(5),D(3,130),DA(3,3),DP(2,130),DISP,EDGE,FORE,FS(3,3,96)
@@ -2382,6 +2409,7 @@ C     ***** PRINT OUT QUADRANGLE IDENTIFICATION ARRAY *****
       COMMON /PARMS/ CHEM(505),EV(3,505),P(3,505),PA(3,3,505)        
      1 ,IDENT(2,505),MAXATM
       character*72 tmpti, tmpti2
+      data blank / ' ' /
 C     ***** LABELING FUNCTION SUBROUTINE *****
       D100K=100000.
       ITILT=0
@@ -2547,7 +2575,7 @@ c     CALL SIMBOL(Y(1),Y(2),HGT,IFIX(TT8),TH,7-NJ3)
 c *** Only one centered symbol (*) is available in ORTEP-III.
 c *** It is triggered by the negative value for argument 6.
 c *** Argument 4 is ignored by SIMBOL.
-      CALL SIMBOL(Y(1),Y(2),HGT,' ',TH,7-NJ3)
+      CALL SIMBOL(Y(1),Y(2),HGT,blank,TH,7-NJ3)
       GO TO 1199
   912 NG=15
   915 CALL ERPNT(AIN(II),NJ*100+NJ2)
@@ -3359,6 +3387,9 @@ C     ***** SUBROUTINE ELIMINATES HIDDEN LINES AND DRAWS VISIBLE LINES *
      5 ,SCAL2,SCL,SYMB(3,3),TAPER,THETA,TITLE(18),TITLE2(18),TS(3,96)
      6 ,VIEW,VT(3,4),V1(4),V2(3),V3(3),V4(3),V5(3),V6(3),WRKV(3,3)
      7 ,XLNG(3),XO(3),XT(3)
+      if (y(1)==3.25901771) then
+         write(*,*) 'Treffer'
+      endif
       NCQ=NCOVER+NQOVER
       IF(NCQ)200,200,205
   200 RETURN
@@ -3541,9 +3572,9 @@ C     ***** DRAW SEGMENT FROM P0 TO P1 *****
       IF(P1-1.0)510,540,540
   540 RETURN
       END
-      character*(*) function maksym(k,gp)
+      character*(*) function maksym(gp)
 c *** returns character string representation of symmetry operator
-      dimension gp(3,4,192)
+      dimension gp(3,4)
       character*1 xyz(3)
       character*5 fract(23)
       character*12 part(3)
@@ -3555,17 +3586,17 @@ c *** returns character string representation of symmetry operator
          part(i) = ' '
          iff = 0
          do 300 j=1,3
-            if (ifix(gp(i,j,k)) .ne. 0) then
-               if (ifix(gp(i,j,k)) .eq. -1)
+            if (ifix(gp(i,j)) .ne. 0) then
+               if (ifix(gp(i,j)) .eq. -1)
      *            part(i) = part(i)(1:iend(part(i))) // '-' // xyz(j)
-               if (ifix(gp(i,j,k)) .eq. 1 .and. iff .eq. 0)
+               if (ifix(gp(i,j)) .eq. 1 .and. iff .eq. 0)
      *            part(i) = part(i)(1:iend(part(i))) // ' ' // xyz(j)
-               if (ifix(gp(i,j,k)) .eq. 1 .and. iff .eq. 1)
+               if (ifix(gp(i,j)) .eq. 1 .and. iff .eq. 1)
      *            part(i) = part(i)(1:iend(part(i))) // '+' // xyz(j)
                iff = 1
             end if
   300    continue
-         gpval = gp(i,4,k)
+         gpval = gp(i,4)
          if(gpval.gt..01 .or. gpval.lt.-.01) then
             if (gpval.lt.0.) then
                part(i) = part(i)(1:iend(part(i))) // '-'
@@ -3660,8 +3691,9 @@ C     ***** ITYPE .GT.0 FOR CARTESIAN,.LE.0 FOR TRICLINIC *****
 C-----CONVERT BOND DISTANCE FOR PLOTTING IN ORTEP
       DIMENSION W(3)
       CHARACTER*8 IFMT,ITXT 
-      CHARACTER*1 ITEX(8)
-      EQUIVALENCE (ITEX(1),ITXT)
+      CHARACTER*72 itex
+      data itex / ' ' /
+      data itxt / '        ' /
 C-----COMPUTE NUMBER OF CHARACTERS FOR OUTPUT
       NC=ND+1
       XD=DIST
@@ -3723,8 +3755,11 @@ C     ***** TRANSFORM TO CARTESIAN SYSTEMS *****
       GO TO 175
   160 IF(ITYPE)162,155,170
 C     ***** TRANSFORM TO TRICLINIC SYSTEM *****
-  162 DO 165 J=1,9
-  165 PAC(J,1)=PAT(J,1)
+  162 do i = 1,3
+         do j = 1,3
+            pac(i,j) = pat(i,j)
+         enddo
+      enddo
       GO TO 175
   170 CALL MM(AA,PAT,PAC)
 C     ***** FORM DIAGONAL MATRIX OR ITS INVERSE *****
@@ -3849,13 +3884,18 @@ C     ***** CALCULATE RECIPROCAL CELL PARAMETERS *****
   130 B(J+6)=ARCCOS(B(J+3))
 C     ***** WAS INPUT FOR REAL OR RECIPROCAL CELL *****
       IF(A(1)-1.)135,150,150
-  135 DO 140 J=1,9
-      T1=AA(J,1)
-      AA(J,1)=BB(J,1)
-      BB(J,1)=T1
-      T1=A(J)
-      A(J)=B(J)
-  140 B(J)=T1
+  135 do i = 1,3
+         do j = 1,3
+            t1      = aa(i,j)
+            aa(i,j) = bb(i,j)
+            bb(i,j) = t1
+         enddo
+      enddo
+      do i = 1,9
+         t1   = a(i)
+         a(i) = b(i)
+         b(i) = t1
+      enddo
 C     ***** WRITE OUT CELL PARAMETERS *****
   143 FORMAT(1H0,10X,22HDIRECT CELL PARAMETERS/1H ,15X,1HA,14X,1HB,14X,
      11HC,14X,5HALPHA,10X,4HBETA,11X,5HGAMMA)
@@ -3931,7 +3971,7 @@ c    1FORMED X18X,13HTRANSFORMED Y18X,13HTRANSFORMED Z)
 c *** ORTEP II symmetry output
 c 185 IF (NOUT.GE.0)
 c    &WRITE (NOUT,175)I,(TS(J,I),(FS(K,J,I),K=1,3),J=1,3)
-  185 if (nout.ge.0) WRITE (NOUT,176)I,maksym(1,fsym)
+  185 if (nout.ge.0) WRITE (NOUT,176)I,maksym(fsym)
 C     ***** NON-CRYSTALLOGRAPHIC HELIX-SYMMETRY INPUT *****
       IF(FS(3,3,I)-5.)188,186,186
   186 T1=FS(1,3,I)/FS(3,3,I)
@@ -4231,10 +4271,10 @@ c     DISP=.005
       SCAL1=1.0
       SCAL2=1.54
       SCL=1.54
-      DO 3005 I=1,3
-      SYMB(I,I)=1.
-      SYMB(I+1,1)=0.
- 3005 SYMB(I+5,1)=0.
+      symb = 0.0
+      do i = 1,3
+         symb(i,i) = 1.0
+      enddo
       TAPER=.375
       THETA=0.0
       VIEW=0.0
@@ -4249,7 +4289,7 @@ C     ***** INITIATE OVERLAP ROUTINES *****
       END
       SUBROUTINE PROJ(D,DP,X,XO,VIEW,I1,I2,I3)
 C     ***** 3D CARTESIAN TO 2D PLOTTER COORDINATES *****
-      DIMENSION D(3,129),DP(2,129),X(3),XO(3)
+      DIMENSION D(3,*),DP(2,*),X(3),XO(3)
       T3=VIEW-X(3)
       DO 145 I=I1,I2,I3
       T1=D(1,I)+X(1)
@@ -4372,20 +4412,32 @@ C *** ZERO ATOMS ARRAY AND RETURN TO EXECUTE NEXT INSTRUCTION ***
       DIMENSION Y(2),YO(2)
       SAVE NPO, YO 
 C     ***** SUBROUTINE WHICH LINKS WITH THE PLOTTER-SPECIFIC SUBROUTINES
-      IF(NPEN-3)210,205,205
+c      IF(NPEN-3)210,205,205
 C     ***** KEEP TRACK OF COORDINATES FOR LAST PEN-UP LOCATION *****
-  205 YO(1)=Y(1)
-      YO(2)=Y(2)
-      NPO=0
-      RETURN
+c  205 YO(1)=Y(1)
+c      YO(2)=Y(2)
+c      NPO=0
+c      RETURN
 C     ***** CALL MECHANICAL PLOTTER PLOTTING SUBROUTINE *****
-  210 IF(NPO)225,220,225
-  220 CONTINUE
-      CALL PLOT(YO(1),YO(2),3)
-  225 CONTINUE
-      CALL PLOT(Y(1),Y(2),2)
-      NPO=1
-      RETURN
+c  210 IF(NPO)225,220,225
+c  220 CONTINUE
+c      CALL PLOT(YO(1),YO(2),3)
+c  225 CONTINUE
+c      CALL PLOT(Y(1),Y(2),2)
+c      NPO=1
+c      RETURN
+      if (npen >= 3) then
+         YO(1)=Y(1)
+         YO(2)=Y(2)
+         NPO=0
+      else
+         if (npo == 0) then
+            CALL PLOT(YO(1),YO(2),3)
+         endif
+         CALL PLOT(Y(1),Y(2),2)
+         NPO=1
+      endif
+      return
       END
       SUBROUTINE SEARC
       DIMENSION NW(6),DX(3),S1D(200),S2(200),U(3),V(3),W(2,4),WW(2,3)
@@ -4937,7 +4989,14 @@ C-----LIFT PEN IF SPECIAL INDICATOR IS FOUND
       IY=IXY-10*IX
       DX=XO+DC(IX)-DS(IY)
       DY=YO+DC(IY)+DS(IX)
+      call pgqci(ioldcolor)
+c      call pgsci(3)
+      if (abs(dx-0.18)<0.005.and.abs(dy-5.9614528E-02)<1e-6) then
+         call pgsci(6)
+         write (*,*) '4999: ',W,DX,DY,IPEN 
+      endif
       CALL DRAW(W,DX,DY,IPEN)
+      call pgsci(ioldcolor)
 C-----PUT PEN DOWN TO DRAW NEXT SEGMENTS
       IPEN=2
   340 IP=IP+1
@@ -4961,7 +5020,10 @@ C-----LOOP THROUGH SEGMENTS OF CENTERED SYMBOL
       IXY=IXYT(K)
       IX=IXY/10
       IY=IXY-10*IX
+c1      call pgqci(ioldcolor)
+c1      call pgsci(4)
       CALL DRAW(W,DC(IX),DC(IY),IPEN)
+c1      call pgsci(ioldcolor)
 C-----PUT PEN DOWN TO DRAW REMAINING SEGMENTS
       IPEN=2
   440 CONTINUE
@@ -5520,11 +5582,13 @@ c *** move the pen
       common /ns/ npf,ndraw,norient,nvar
 
       if (ipen.eq.2) then
+c         if (ndraw.eq.1) write(*,*) 'pensc,pgdraw: ',x+xtrans,y+ytrans
          if (ndraw.eq.1) call pgdraw(x+xtrans,y+ytrans)
          if (ndraw.eq.9) write (npf,111) x+xtrans,y+ytrans
   111    format('LIN',2(1x,f10.6))
       end if
       if (ipen.eq.3) then
+c         if (ndraw.eq.1) write(*,*) 'pensc,pgmove: ',x+xtrans,y+ytrans
          if (ndraw.eq.1) call pgmove(x+xtrans,y+ytrans)
          if (ndraw.eq.9) write (npf,112) x+xtrans,y+ytrans
   112    format('MOV',2(1x,f10.6))
